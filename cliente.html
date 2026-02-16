@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catálogo</title>
+
+<style>
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #0f172a;
+  color: white;
+}
+
+/* HEADER */
+
+header {
+  background: #1e293b;
+  padding: 20px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.filtros {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+input, select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: white;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border: 1px solid #3b82f6;
+}
+
+/* GRID PRODUTOS */
+
+#produtos {
+  padding: 30px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+}
+
+/* CARD */
+
+.card {
+  background: #1e293b;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.4);
+  transition: 0.3s;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 0 25px rgba(59,130,246,0.6);
+}
+
+.card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.card h3 {
+  margin: 12px 0 5px 0;
+  font-size: 18px;
+}
+
+.card p {
+  font-size: 14px;
+  color: #cbd5e1;
+}
+
+.preco {
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: 10px;
+  color: #3b82f6;
+}
+
+/* BOTÃO WHATSAPP */
+
+.btn-whatsapp {
+  margin-top: auto;
+  padding: 12px;
+  background: #22c55e;
+  text-align: center;
+  border-radius: 8px;
+  text-decoration: none;
+  color: white;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.btn-whatsapp:hover {
+  background: #16a34a;
+  transform: scale(1.03);
+}
+
+@media (max-width: 600px) {
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+
+.imagens-container {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.imagens-container img {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.imagens-container img:hover {
+  transform: scale(1.05);
+}
+
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+<div style="position:relative; cursor:pointer;" onclick="abrirCarrinho()">
+  🛒
+  <span id="contadorCarrinho" style="
+    position:absolute;
+    top:-8px;
+    right:-10px;
+    background:red;
+    color:white;
+    border-radius:50%;
+    padding:3px 7px;
+    font-size:12px;
+  ">0</span>
+</div>
+
+
+  <h2>Catálogo de Produtos</h2>
+
+  <div class="filtros">
+    <input type="text" id="pesquisa" placeholder="Pesquisar...">
+    <select id="filtroCategoria">
+      <option value="">Todas categorias</option>
+    </select>
+  </div>
+</header>
+
+<div id="produtos"></div>
+
+<!-- MODAL IMAGEM -->
+<div id="modalImagem" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.9);
+  justify-content:center;
+  align-items:center;
+  z-index:999;
+">
+
+  <span id="fecharModal" style="
+    position:absolute;
+    top:20px;
+    right:30px;
+    font-size:30px;
+    cursor:pointer;
+    color:white;
+  ">✕</span>
+
+  <span id="btnAnterior" style="
+    position:absolute;
+    left:30px;
+    font-size:40px;
+    cursor:pointer;
+    color:white;
+  ">❮</span>
+
+  <img id="imagemExpandida" style="
+    max-width:80%;
+    max-height:80%;
+    border-radius:12px;
+  ">
+
+  <span id="btnProximo" style="
+    position:absolute;
+    right:30px;
+    font-size:40px;
+    cursor:pointer;
+    color:white;
+  ">❯</span>
+
+</div>
+
+
+<script type="module" src="cliente.js"></script>
+
+
+<div id="modalCarrinho" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.7);
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+">
+
+  <div style="
+    background:#1e293b;
+    width:400px;
+    max-height:80%;
+    overflow:auto;
+    padding:20px;
+    border-radius:12px;
+    position:relative;
+  ">
+
+    <!-- BOTÃO X PARA FECHAR -->
+    <button onclick="fecharCarrinho()" style="
+      position:absolute;
+      top:10px;
+      right:10px;
+      background:transparent;
+      border:none;
+      color:white;
+      font-size:20px;
+      font-weight:bold;
+      cursor:pointer;
+    ">✖</button>
+
+    <h3>Seu Carrinho</h3>
+    <div id="itensCarrinho"></div>
+
+    <h4 id="totalCarrinho"></h4>
+
+    <button onclick="finalizarCompra()" style="
+      width:100%;
+      padding:12px;
+      background:#22c55e;
+      border:none;
+      border-radius:8px;
+      color:white;
+      font-weight:bold;
+      cursor:pointer;">
+      Finalizar pelo WhatsApp
+    </button>
+
+  </div>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
