@@ -6,6 +6,73 @@
 <title>Catálogo</title>
 
 <style>
+  /* ===== MENU LATERAL ===== */
+
+.menu-lateral {
+  position: fixed;
+  top: 0;
+  left: 0;
+  transform: translateX(-100%);
+  width: 110px;
+  height: 100%;
+  background: #0f172a;
+  box-shadow: 5px 0 20px rgba(0,0,0,0.5);
+  padding: 60px;
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  z-index: 1001;
+}
+
+.menu-lateral.ativo {
+  transform: translateX(0);
+}
+
+
+.menu-lateral a {
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+  padding: 10px;
+  border-radius: 6px;
+  transition: 0.3s;
+}
+
+.menu-lateral a:hover {
+  background: #1e293b;
+}
+
+.menu-lateral.ativo {
+  left: 0;
+}
+
+.fechar-menu {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  align-self: flex-end;
+  cursor: pointer;
+}
+
+/* Overlay */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  opacity: 0;
+  visibility: hidden;
+  transition: 0.3s;
+  z-index: 1000;
+}
+
+.overlay.ativo {
+  opacity: 1;
+  visibility: visible;
+}
+
 
 body {
   margin: 0;
@@ -14,43 +81,126 @@ body {
   color: white;
 }
 
-/* HEADER */
+/* ===== HEADER MODERNO ===== */
 
-header {
+.topo {
   background: #1e293b;
-  padding: 20px 30px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
+  padding: 15px 25px;
   box-shadow: 0 0 20px rgba(0,0,0,0.5);
 }
 
-header h2 {
-  margin: 0;
-  font-size: 22px;
+.topo-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+}
+.menu-icon {
+  width: 30px;
+  height: 24px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1100;
 }
 
-.filtros {
+.menu-icon span {
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background: white;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* posição inicial */
+.menu-icon span:nth-child(1) {
+  transform: translateY(-8px);
+}
+
+.menu-icon span:nth-child(2) {
+  transform: translateY(0);
+}
+
+.menu-icon span:nth-child(3) {
+  transform: translateY(8px);
+}
+
+/* ===== quando ativo ===== */
+
+.menu-icon.ativo span:nth-child(1) {
+  transform: rotate(45deg);
+}
+
+.menu-icon.ativo span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-icon.ativo span:nth-child(3) {
+  transform: rotate(-45deg);
+}
+
+
+
+.logo img {
+  height: 145px;
+  width: auto;
+  object-fit: contain;
+}
+
+
+.carrinho {
+  position: relative;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.badge {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  background: red;
+  color: white;
+  border-radius: 50%;
+  padding: 3px 7px;
+  font-size: 12px;
+}
+
+.topo-pesquisa {
+  margin-top: 15px;
   display: flex;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
-input, select {
-  padding: 10px;
+.topo-pesquisa input,
+.topo-pesquisa select {
+  padding: 12px;
   border-radius: 8px;
   border: 1px solid #334155;
   background: #0f172a;
   color: white;
 }
 
-input:focus, select:focus {
+.topo-pesquisa input {
+  flex: 1;
+}
+
+.topo-pesquisa input:focus,
+.topo-pesquisa select:focus {
   outline: none;
   border: 1px solid #3b82f6;
 }
 
-/* GRID PRODUTOS */
+@media (max-width: 600px) {
+  .topo-pesquisa {
+    flex-direction: column;
+  }
+}
+
+/* ===== GRID PRODUTOS ===== */
 
 #produtos {
   padding: 30px;
@@ -59,7 +209,7 @@ input:focus, select:focus {
   gap: 25px;
 }
 
-/* CARD */
+/* ===== CARD ===== */
 
 .card {
   background: #1e293b;
@@ -100,7 +250,7 @@ input:focus, select:focus {
   color: #3b82f6;
 }
 
-/* BOTÃO WHATSAPP */
+/* ===== BOTÃO WHATSAPP ===== */
 
 .btn-whatsapp {
   margin-top: auto;
@@ -119,13 +269,7 @@ input:focus, select:focus {
   transform: scale(1.03);
 }
 
-@media (max-width: 600px) {
-  header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-}
+/* ===== GALERIA ===== */
 
 .imagens-container {
   display: flex;
@@ -146,42 +290,63 @@ input:focus, select:focus {
   transform: scale(1.05);
 }
 
-
 </style>
 </head>
 
 <body>
 
-<header>
+<!-- ===== HEADER ===== -->
 
-<div style="position:relative; cursor:pointer;" onclick="abrirCarrinho()">
-  🛒
-  <span id="contadorCarrinho" style="
-    position:absolute;
-    top:-8px;
-    right:-10px;
-    background:red;
-    color:white;
-    border-radius:50%;
-    padding:3px 7px;
-    font-size:12px;
-  ">0</span>
+<header class="topo">
+
+  <div class="topo-linha">
+<div class="menu-icon" onclick="toggleMenu()">
+  <span></span>
+  <span></span>
+  <span></span>
 </div>
 
 
-  <h2>Catálogo de Produtos</h2>
 
-  <div class="filtros">
-    <input type="text" id="pesquisa" placeholder="Pesquisar...">
+    <div class="logo">
+      <img src="ChatGPT Image 16 de fev. de 2026, 21_29_13.png" alt="Minha Loja">
+    </div>
+
+    <div class="carrinho" onclick="abrirCarrinho()">
+      🛒
+      <span id="contadorCarrinho" class="badge">0</span>
+    </div>
+  </div>
+
+  <div class="topo-pesquisa">
+    <input type="text" id="pesquisa" placeholder="Buscar produtos...">
     <select id="filtroCategoria">
       <option value="">Todas categorias</option>
     </select>
   </div>
+
 </header>
+
+<!-- ===== MENU LATERAL ===== -->
+
+<div id="menuLateral" class="menu-lateral">
+  
+
+  <a href="#">Início</a>
+  <a href="#">Categorias</a>
+  <a href="#">Promoções</a>
+  <a href="#">Contato</a>
+</div>
+
+<div id="overlay" class="overlay" onclick="fecharMenu()"></div>
+
+
+<!-- ===== PRODUTOS ===== -->
 
 <div id="produtos"></div>
 
-<!-- MODAL IMAGEM -->
+<!-- ===== MODAL IMAGEM ===== -->
+
 <div id="modalImagem" style="
   display:none;
   position:fixed;
@@ -198,7 +363,6 @@ input:focus, select:focus {
     right:30px;
     font-size:30px;
     cursor:pointer;
-    color:white;
   ">✕</span>
 
   <span id="btnAnterior" style="
@@ -206,7 +370,6 @@ input:focus, select:focus {
     left:30px;
     font-size:40px;
     cursor:pointer;
-    color:white;
   ">❮</span>
 
   <img id="imagemExpandida" style="
@@ -220,14 +383,11 @@ input:focus, select:focus {
     right:30px;
     font-size:40px;
     cursor:pointer;
-    color:white;
   ">❯</span>
 
 </div>
 
-
-<script type="module" src="cliente.js"></script>
-
+<!-- ===== MODAL CARRINHO ===== -->
 
 <div id="modalCarrinho" style="
   display:none;
@@ -249,7 +409,6 @@ input:focus, select:focus {
     position:relative;
   ">
 
-    <!-- BOTÃO X PARA FECHAR -->
     <button onclick="fecharCarrinho()" style="
       position:absolute;
       top:10px;
@@ -258,13 +417,11 @@ input:focus, select:focus {
       border:none;
       color:white;
       font-size:20px;
-      font-weight:bold;
       cursor:pointer;
     ">✖</button>
 
     <h3>Seu Carrinho</h3>
     <div id="itensCarrinho"></div>
-
     <h4 id="totalCarrinho"></h4>
 
     <button onclick="finalizarCompra()" style="
@@ -282,19 +439,42 @@ input:focus, select:focus {
   </div>
 </div>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+<script type="module" src="cliente.js"></script>
 
 </body>
 </html>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const menu = document.getElementById("menuLateral");
+  const overlay = document.getElementById("overlay");
+  const menuIcon = document.querySelector(".menu-icon");
+
+  window.toggleMenu = function () {
+    menu.classList.toggle("ativo");
+    overlay.classList.toggle("ativo");
+    menuIcon.classList.toggle("ativo");
+
+    if (menu.classList.contains("ativo")) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+  };
+
+  window.fecharMenu = function () {
+    menu.classList.remove("ativo");
+    overlay.classList.remove("ativo");
+    menuIcon.classList.remove("ativo");
+    document.body.style.overflow = "auto";
+  };
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      window.fecharMenu();
+    }
+  });
+
+});
+</script>
