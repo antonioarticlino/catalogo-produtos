@@ -370,6 +370,19 @@ body {
   font-size: 18px;
   cursor: pointer;
 }
+
+/* ===== ANIMAÇÃO CARRINHO ===== */
+
+@keyframes pulseCarrinho {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+.carrinho.animar {
+  animation: pulseCarrinho 0.4s ease;
+}
+
 </style>
 </head>
 
