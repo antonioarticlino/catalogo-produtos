@@ -51,100 +51,136 @@ function renderizarProdutos(lista) {
   const produtosDiv = document.getElementById("produtos");
   produtosDiv.innerHTML = "";
 
-
-setTimeout(() => {
-  document.querySelectorAll(".imagem-produto").forEach(imagem => {
-    imagem.addEventListener("click", () => {
-      imagensAtuais = JSON.parse(imagem.dataset.imagens);
-      indiceAtual = parseInt(imagem.dataset.index);
-      abrirImagem();
+  setTimeout(() => {
+    document.querySelectorAll(".imagem-produto").forEach(imagem => {
+      imagem.addEventListener("click", () => {
+        imagensAtuais = JSON.parse(imagem.dataset.imagens);
+        indiceAtual = parseInt(imagem.dataset.index);
+        abrirImagem();
+      });
     });
-  });
-}, 100);
-
-
-
+  }, 100);
 
   lista.forEach(produto => {
 
-  let imagensHTML = "";
+    let imagensHTML = "";
+    if (produto.imagens && produto.imagens.length > 0) {
+      produto.imagens.forEach((img, index) => {
+        imagensHTML += `
+          <img 
+            src="${img}" 
+            alt="${produto.nome}"
+            class="imagem-produto"
+            data-index="${index}"
+            data-imagens='${JSON.stringify(produto.imagens)}'>
+        `;
+      });
+    }
 
-if (produto.imagens && produto.imagens.length > 0) {
-  produto.imagens.forEach((img, index) => {
-    imagensHTML += `
-      <img 
-        src="${img}" 
-        alt="${produto.nome}"
-        class="imagem-produto"
-        data-index="${index}"
-        data-imagens='${JSON.stringify(produto.imagens)}'>
+    // ✅ Garantir que o preço seja número
+    const precoOriginal = Number(produto.preco);
+    const precoFinal = calcularPreco(produto);
+    const temPromocao = produto.promocao && produto.promocao.ativo && precoFinal < precoOriginal;
+
+    produtosDiv.innerHTML += `
+      <div class="card">
+
+        <div class="imagens-container">
+          ${imagensHTML}
+        </div>
+
+        <h3>${produto.nome}</h3>
+
+        <p>${produto.categoria}</p>
+
+        <p>${(produto.descricao || "").replace(/\n/g, "<br>")}</p>
+
+        <div class="preco">
+          ${temPromocao
+            ? `
+              <p style="text-decoration:line-through; color:#888;">R$ ${precoOriginal.toFixed(2)}</p>
+              <p style="color:#22c55e; font-weight:bold;">R$ ${precoFinal.toFixed(2)}</p>
+              <span style="background:red;color:white;padding:4px 8px;border-radius:6px;font-size:12px;">
+                -${produto.promocao.desconto}%
+              </span>
+              <p class="contador-promocao" data-fim="${produto.promocao.dataFim}"></p>
+            `
+            : `<p>R$ ${precoOriginal.toFixed(2)}</p>`
+          }
+        </div>
+
+        <div style="display:flex; gap:10px; margin-top:15px;">
+          <button onclick="adicionarCarrinho(
+            '${produto.nome}', 
+            ${precoFinal}, 
+            '${produto.imagens && produto.imagens.length > 0 ? produto.imagens[0] : ""}',
+            this
+          )"
+          style="
+            flex:1;
+            padding:10px;
+            background:#3b82f6;
+            border:none;
+            border-radius:8px;
+            color:white;
+            font-weight:bold;
+            cursor:pointer;">
+            Adicionar
+          </button>
+
+          <a href="https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(
+            `Olá, quero comprar 1 unidade do produto: ${produto.nome} - R$ ${precoFinal}`
+          )}"
+            target="_blank"
+            style="
+              flex:1;
+              padding:10px;
+              background:#22c55e;
+              border-radius:8px;
+              color:white;
+              font-weight:bold;
+              text-align:center;
+              text-decoration:none;">
+              Comprar 1
+          </a>
+        </div>
+
+      </div>
     `;
   });
 }
 
+// 🔥 FUNÇÃO DE CONTADOR – FICA FORA DO RENDERIZAR
+function atualizarContadores() {
+  const contadores = document.querySelectorAll(".contador-promocao");
 
-produtosDiv.innerHTML += `
-  <div class="card">
+  contadores.forEach(c => {
+    const fim = new Date(c.dataset.fim);
+    const agora = new Date();
+    let diff = fim - agora;
 
-    <div class="imagens-container">
-      ${imagensHTML}
-    </div>
+    if (diff <= 0) {
+      c.innerText = "Oferta encerrada";
+      return;
+    }
 
-    <h3>${produto.nome}</h3>
+    const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
+    diff -= dias * (1000 * 60 * 60 * 24);
 
-    <p>${produto.categoria}</p>
+    const horas = Math.floor(diff / (1000 * 60 * 60));
+    diff -= horas * (1000 * 60 * 60);
 
-    <p>
-      ${(produto.descricao || "").replace(/\n/g, "<br>")}
-    </p>
+    const minutos = Math.floor(diff / (1000 * 60));
+    diff -= minutos * (1000 * 60);
 
-    <div class="preco">R$ ${produto.preco}</div>
+    const segundos = Math.floor(diff / 1000);
 
-    <div style="display:flex; gap:10px; margin-top:15px;">
-
-<button onclick="adicionarCarrinho(
-  '${produto.nome}', 
-  ${produto.preco}, 
-  '${produto.imagens && produto.imagens.length > 0 ? produto.imagens[0] : ""}',
-  this
-)"
-style="
-  flex:1;
-  padding:10px;
-  background:#3b82f6;
-  border:none;
-  border-radius:8px;
-  color:white;
-  font-weight:bold;
-  cursor:pointer;">
-  Adicionar
-</button>
-
-
-      <a href="https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(
-        `Olá, quero comprar 1 unidade do produto: ${produto.nome} - R$ ${produto.preco}`
-      )}"
-        target="_blank"
-        style="
-          flex:1;
-          padding:10px;
-          background:#22c55e;
-          border-radius:8px;
-          color:white;
-          font-weight:bold;
-          text-align:center;
-          text-decoration:none;">
-          Comprar 1
-      </a>
-
-    </div>
-
-  </div>
-`
+    c.innerText = `Oferta termina em ${dias}d ${horas}h ${minutos}m ${segundos}s`;
   });
-
 }
 
+// 🔥 Chama a cada 1 segundo
+setInterval(atualizarContadores, 1000);
 
 //////////////////////////////////////////////////////
 // PREENCHER CATEGORIAS AUTOMÁTICO
@@ -360,5 +396,39 @@ function animarProdutoAteCarrinho(botao) {
 
   }, 800);
 }
+
+function calcularPreco(produto) {
+
+  const preco = Number(produto.preco); // garante que seja número
+
+  if (!produto.promocao || !produto.promocao.ativo) return preco;
+
+  const agora = new Date();
+
+  if (!produto.promocao.dataInicio || !produto.promocao.dataFim) return preco;
+
+  const inicio = new Date(produto.promocao.dataInicio);
+  const fim = new Date(produto.promocao.dataFim);
+
+  if (agora >= inicio && agora <= fim) {
+    return preco - (preco * produto.promocao.desconto / 100);
+  }
+
+  return preco;
+}
+window.filtrarPromocoes = function() {
+  const promocaoProdutos = todosProdutos.filter(produto => {
+    const precoOriginal = Number(produto.preco);
+    const precoFinal = calcularPreco(produto);
+    return produto.promocao && produto.promocao.ativo && precoFinal < precoOriginal;
+  });
+
+  renderizarProdutos(promocaoProdutos);
+};
+// FUNÇÃO PARA VOLTAR AO INÍCIO
+window.voltarInicio = function() {
+  renderizarProdutos(todosProdutos); // mostra todos os produtos
+};
+
 
 
