@@ -13,17 +13,20 @@
   top: 0;
   left: 0;
   transform: translateX(-100%);
-  width: 200px;              /* largura real */
+  width: 220px;
   height: 100vh;
   background: #0f172a;
   box-shadow: 5px 0 20px rgba(0,0,0,0.5);
-  padding: 80px 20px;        /* topo 80px, lateral 20px */
+
+  padding: 20px 20px 20px 60px; 
+  padding-top: 70px;
   transition: transform 0.3s ease;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 15px;
+
   z-index: 1001;
-  box-sizing: border-box;    /* IMPORTANTE */
+  box-sizing: border-box;
 }
 
 
@@ -49,14 +52,11 @@
   left: 0;
 }
 
-.fechar-menu {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 20px;
-  align-self: flex-end;
-  cursor: pointer;
+.menu-icon {
+  position: absolute;
+  left: 0;
 }
+
 
 /* Overlay */
 
@@ -92,21 +92,49 @@ body {
 }
 
 .topo-linha {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 15px;
+  justify-content: center;
 }
+
+/* MENU ESQUERDA */
 .menu-icon {
+  position: absolute;
+  left: 0;
   width: 30px;
   height: 24px;
-  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   z-index: 1100;
 }
+
+.carrinho {
+  position: absolute;
+  right: 0;
+  font-size: 20px;
+  cursor: pointer;
+
+  width: 40px;
+  height: 40px;
+  background: #0f172a; /* cor do círculo */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: 0 0 10px rgba(0,0,0,0.4);
+  transition: 0.3s;
+}
+
+.carrinho:hover {
+  background: #1e293b;
+  transform: scale(1.05);
+}
+
+
 
 .menu-icon span {
   position: absolute;
@@ -382,13 +410,16 @@ body {
 <!-- ===== MENU LATERAL ===== -->
 
 <div id="menuLateral" class="menu-lateral">
-  
+
+
 
   <a href="#">Início</a>
   <a href="#">Categorias</a>
   <a href="#">Promoções</a>
   <a href="#">Contato</a>
+
 </div>
+
 
 <div id="overlay" class="overlay" onclick="fecharMenu()"></div>
 
