@@ -102,18 +102,23 @@ produtosDiv.innerHTML += `
 
     <div style="display:flex; gap:10px; margin-top:15px;">
 
-      <button onclick="adicionarCarrinho('${produto.nome}', ${produto.preco})"
-        style="
-          flex:1;
-          padding:10px;
-          background:#3b82f6;
-          border:none;
-          border-radius:8px;
-          color:white;
-          font-weight:bold;
-          cursor:pointer;">
-          Adicionar
-      </button>
+   <button onclick="adicionarCarrinho(
+  '${produto.nome}', 
+  ${produto.preco}, 
+  '${produto.imagens && produto.imagens.length > 0 ? produto.imagens[0] : ""}'
+)"
+style="
+  flex:1;
+  padding:10px;
+  background:#3b82f6;
+  border:none;
+  border-radius:8px;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;">
+  Adicionar
+</button>
+
 
       <a href="https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(
         `Olá, quero comprar 1 unidade do produto: ${produto.nome} - R$ ${produto.preco}`
@@ -219,39 +224,62 @@ document.getElementById("modalImagem").addEventListener("click", (e) => {
 
 let carrinho = [];
 
-window.adicionarCarrinho = function(nome, preco) {
-  carrinho.push({ nome, preco });
+window.adicionarAoCarrinho = function(produto) {
+  carrinho.push(produto);
   atualizarCarrinho();
+
+  // 🔥 Anima carrinho
+  const carrinhoIcon = document.querySelector(".carrinho");
+  carrinhoIcon.classList.add("animar");
+
+  setTimeout(() => {
+    carrinhoIcon.classList.remove("animar");
+  }, 400);
 };
+
 
 window.abrirCarrinho = function() {
   document.getElementById("modalCarrinho").style.display = "flex";
 };
 
 function atualizarCarrinho() {
-  const itensDiv = document.getElementById("itensCarrinho");
+  const lista = document.getElementById("itensCarrinho");
   const contador = document.getElementById("contadorCarrinho");
 
-  itensDiv.innerHTML = "";
+  lista.innerHTML = "";
   let total = 0;
 
   carrinho.forEach((item, index) => {
-    total += item.preco;
 
-    itensDiv.innerHTML += `
-      <div style="margin-bottom:10px;">
-        ${item.nome} - R$ ${item.preco}
-        <button onclick="removerItem(${index})"
-          style="background:red;color:white;border:none;border-radius:5px;cursor:pointer;">
-          X
-        </button>
+    const div = document.createElement("div");
+    div.classList.add("item-carrinho");
+
+    div.innerHTML = `
+      <img src="${item.imagem}" class="img-carrinho">
+      
+      <div class="info-carrinho">
+        <span>${item.nome}</span>
+     <span>R$ ${Number(item.preco).toFixed(2)}</span>
       </div>
+
+      <button class="remover" onclick="removerItem(${index})">✕</button>
     `;
+
+    lista.appendChild(div);
+    total += Number(item.preco);
+
   });
 
-  document.getElementById("totalCarrinho").innerText = "Total: R$ " + total.toFixed(2);
+  document.getElementById("totalCarrinho").innerText =
+    "Total: R$ " + total.toFixed(2);
+
   contador.innerText = carrinho.length;
+  
+document.getElementById("totalCarrinho").innerText = "Total: R$ " + total.toFixed(2);
+contador.innerText = carrinho.length;
 }
+
+
 
 window.removerItem = function(index) {
   carrinho.splice(index, 1);
@@ -275,3 +303,16 @@ window.finalizarCompra = function() {
 window.fecharCarrinho = function() {
   document.getElementById("modalCarrinho").style.display = "none";
 };
+
+window.adicionarCarrinho = function(nome, preco, imagem) {
+  carrinho.push({
+    nome,
+    preco,
+    imagem
+  });
+
+  atualizarCarrinho();
+};
+
+
+
