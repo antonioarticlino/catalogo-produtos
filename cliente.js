@@ -102,10 +102,11 @@ produtosDiv.innerHTML += `
 
     <div style="display:flex; gap:10px; margin-top:15px;">
 
-   <button onclick="adicionarCarrinho(
+<button onclick="adicionarCarrinho(
   '${produto.nome}', 
   ${produto.preco}, 
-  '${produto.imagens && produto.imagens.length > 0 ? produto.imagens[0] : ""}'
+  '${produto.imagens && produto.imagens.length > 0 ? produto.imagens[0] : ""}',
+  this
 )"
 style="
   flex:1;
@@ -304,7 +305,8 @@ window.fecharCarrinho = function() {
   document.getElementById("modalCarrinho").style.display = "none";
 };
 
-window.adicionarCarrinho = function(nome, preco, imagem) {
+window.adicionarCarrinho = function(nome, preco, imagem, botao) {
+
   carrinho.push({
     nome,
     preco,
@@ -312,7 +314,51 @@ window.adicionarCarrinho = function(nome, preco, imagem) {
   });
 
   atualizarCarrinho();
+
+  animarProdutoAteCarrinho(botao);
 };
 
+function animarProdutoAteCarrinho(botao) {
+
+  const card = botao.closest(".card");
+  const img = card.querySelector(".imagem-produto");
+  const carrinhoIcon = document.querySelector(".carrinho");
+
+  if (!img) return;
+
+  const clone = img.cloneNode(true);
+
+  const rect = img.getBoundingClientRect();
+  const carrinhoRect = carrinhoIcon.getBoundingClientRect();
+
+  clone.style.position = "fixed";
+  clone.style.left = rect.left + "px";
+  clone.style.top = rect.top + "px";
+  clone.style.width = rect.width + "px";
+  clone.style.height = rect.height + "px";
+  clone.style.transition = "all 0.8s cubic-bezier(.65,-0.3,.32,1.4)";
+  clone.style.zIndex = "9999";
+  clone.style.borderRadius = "10px";
+
+  document.body.appendChild(clone);
+
+  setTimeout(() => {
+    clone.style.left = carrinhoRect.left + "px";
+    clone.style.top = carrinhoRect.top + "px";
+    clone.style.width = "20px";
+    clone.style.height = "20px";
+    clone.style.opacity = "0";
+  }, 10);
+
+  setTimeout(() => {
+    clone.remove();
+    carrinhoIcon.classList.add("animar");
+
+    setTimeout(() => {
+      carrinhoIcon.classList.remove("animar");
+    }, 400);
+
+  }, 800);
+}
 
 
