@@ -54,20 +54,15 @@ function renderizarProdutos(lista) {
   const categorias = [...new Set(lista.map(p => p.categoria))];
 
   categorias.forEach(cat => {
-    // Criar seção da categoria
     const catSection = document.createElement("div");
     catSection.classList.add("categoria-produtos");
-
-    // Título da categoria
     catSection.innerHTML = `<h2 style="margin-top:40px; color:#3b82f6;">${cat}</h2>`;
 
-    // Grid dos produtos da categoria
     const catGrid = document.createElement("div");
     catGrid.style.display = "grid";
     catGrid.style.gridTemplateColumns = "repeat(auto-fill, minmax(280px, 1fr))";
     catGrid.style.gap = "25px";
 
-    // Adicionar cada produto da categoria
     lista.filter(p => p.categoria === cat).forEach(produto => {
       let imagensHTML = "";
       if (produto.imagens && produto.imagens.length > 0) {
@@ -87,6 +82,27 @@ function renderizarProdutos(lista) {
       const precoFinal = calcularPreco(produto);
       const temPromocao = produto.promocao && produto.promocao.ativo && precoFinal < precoOriginal;
 
+      // Botão Adicionar
+      const botaoAdicionar = produto.vendido
+        ? `<button disabled style="flex:1;padding:10px;background:#888;border:none;border-radius:8px;color:white;font-weight:bold;cursor:not-allowed;">
+             VENDIDO
+           </button>`
+        : `<button onclick="adicionarCarrinho('${produto.nome}', ${precoFinal}, '${produto.imagens && produto.imagens.length > 0 ? produto.imagens[0] : ""}', this)"
+             style="flex:1;padding:10px;background:#3b82f6;border:none;border-radius:8px;color:white;font-weight:bold;cursor:pointer;">
+             Adicionar
+           </button>`;
+
+      // Botão WhatsApp
+      const botaoWhatsApp = produto.vendido
+        ? `<button disabled style="flex:1;padding:10px;background:#888;border:none;border-radius:8px;color:white;font-weight:bold;cursor:not-allowed;">
+             Produto vendido
+           </button>`
+        : `<a href="https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(`Olá, quero comprar 1 unidade do produto: ${produto.nome} - R$ ${precoFinal}`)}"
+             target="_blank"
+             style="flex:1;padding:10px;background:#22c55e;border-radius:8px;color:white;font-weight:bold;text-align:center;text-decoration:none;">
+             Comprar 1
+           </a>`;
+
       const card = document.createElement("div");
       card.classList.add("card");
       card.innerHTML = `
@@ -105,22 +121,14 @@ function renderizarProdutos(lista) {
           }
         </div>
         <div style="display:flex; gap:10px; margin-top:15px;">
-          <button onclick="adicionarCarrinho('${produto.nome}', ${precoFinal}, '${produto.imagens && produto.imagens.length > 0 ? produto.imagens[0] : ""}', this)"
-            style="flex:1;padding:10px;background:#3b82f6;border:none;border-radius:8px;color:white;font-weight:bold;cursor:pointer;">
-            Adicionar
-          </button>
-          <a href="https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(`Olá, quero comprar 1 unidade do produto: ${produto.nome} - R$ ${precoFinal}`)}"
-            target="_blank"
-            style="flex:1;padding:10px;background:#22c55e;border-radius:8px;color:white;font-weight:bold;text-align:center;text-decoration:none;">
-            Comprar 1
-          </a>
+          ${botaoAdicionar}
+          ${botaoWhatsApp}
         </div>
       `;
 
       catGrid.appendChild(card);
     });
 
-    // Adiciona grid na seção e seção na página
     catSection.appendChild(catGrid);
     produtosDiv.appendChild(catSection);
   });
@@ -136,6 +144,8 @@ function renderizarProdutos(lista) {
     });
   }, 100);
 }
+
+
 
 
 // 🔥 FUNÇÃO DE CONTADOR – FICA FORA DO RENDERIZAR
