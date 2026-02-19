@@ -42,15 +42,90 @@ async function carregarProdutos() {
   preencherCategorias();
   renderizarProdutos(todosProdutos);
 }
-
 //////////////////////////////////////////////////////
-// RENDERIZAR
+// RENDERIZAR PRODUTOS POR CATEGORIA
 //////////////////////////////////////////////////////
 function renderizarProdutos(lista) {
 
   const produtosDiv = document.getElementById("produtos");
   produtosDiv.innerHTML = "";
 
+  // Agrupar produtos por categoria
+  const categorias = [...new Set(lista.map(p => p.categoria))];
+
+  categorias.forEach(cat => {
+    // Criar seção da categoria
+    const catSection = document.createElement("div");
+    catSection.classList.add("categoria-produtos");
+
+    // Título da categoria
+    catSection.innerHTML = `<h2 style="margin-top:40px; color:#3b82f6;">${cat}</h2>`;
+
+    // Grid dos produtos da categoria
+    const catGrid = document.createElement("div");
+    catGrid.style.display = "grid";
+    catGrid.style.gridTemplateColumns = "repeat(auto-fill, minmax(280px, 1fr))";
+    catGrid.style.gap = "25px";
+
+    // Adicionar cada produto da categoria
+    lista.filter(p => p.categoria === cat).forEach(produto => {
+      let imagensHTML = "";
+      if (produto.imagens && produto.imagens.length > 0) {
+        produto.imagens.forEach((img, index) => {
+          imagensHTML += `
+            <img 
+              src="${img}" 
+              alt="${produto.nome}"
+              class="imagem-produto"
+              data-index="${index}"
+              data-imagens='${JSON.stringify(produto.imagens)}'>
+          `;
+        });
+      }
+
+      const precoOriginal = Number(produto.preco);
+      const precoFinal = calcularPreco(produto);
+      const temPromocao = produto.promocao && produto.promocao.ativo && precoFinal < precoOriginal;
+
+      const card = document.createElement("div");
+      card.classList.add("card");
+      card.innerHTML = `
+        <div class="imagens-container">${imagensHTML}</div>
+        <h3>${produto.nome}</h3>
+        <p>${(produto.descricao || "").replace(/\n/g, "<br>")}</p>
+        <div class="preco">
+          ${temPromocao
+            ? `<p style="text-decoration:line-through; color:#888;">R$ ${precoOriginal.toFixed(2)}</p>
+               <p style="color:#22c55e; font-weight:bold;">R$ ${precoFinal.toFixed(2)}</p>
+               <span style="background:red;color:white;padding:4px 8px;border-radius:6px;font-size:12px;">
+                 -${produto.promocao.desconto}%
+               </span>
+               <p class="contador-promocao" data-fim="${produto.promocao.dataFim}"></p>`
+            : `<p>R$ ${precoOriginal.toFixed(2)}</p>`
+          }
+        </div>
+        <div style="display:flex; gap:10px; margin-top:15px;">
+          <button onclick="adicionarCarrinho('${produto.nome}', ${precoFinal}, '${produto.imagens && produto.imagens.length > 0 ? produto.imagens[0] : ""}', this)"
+            style="flex:1;padding:10px;background:#3b82f6;border:none;border-radius:8px;color:white;font-weight:bold;cursor:pointer;">
+            Adicionar
+          </button>
+          <a href="https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(`Olá, quero comprar 1 unidade do produto: ${produto.nome} - R$ ${precoFinal}`)}"
+            target="_blank"
+            style="flex:1;padding:10px;background:#22c55e;border-radius:8px;color:white;font-weight:bold;text-align:center;text-decoration:none;">
+            Comprar 1
+          </a>
+        </div>
+      `;
+
+      catGrid.appendChild(card);
+    });
+
+    // Adiciona grid na seção e seção na página
+    catSection.appendChild(catGrid);
+    produtosDiv.appendChild(catSection);
+  });
+
+  // Reaplicar evento de clique nas imagens
   setTimeout(() => {
     document.querySelectorAll(".imagem-produto").forEach(imagem => {
       imagem.addEventListener("click", () => {
@@ -60,95 +135,8 @@ function renderizarProdutos(lista) {
       });
     });
   }, 100);
-
-  lista.forEach(produto => {
-
-    let imagensHTML = "";
-    if (produto.imagens && produto.imagens.length > 0) {
-      produto.imagens.forEach((img, index) => {
-        imagensHTML += `
-          <img 
-            src="${img}" 
-            alt="${produto.nome}"
-            class="imagem-produto"
-            data-index="${index}"
-            data-imagens='${JSON.stringify(produto.imagens)}'>
-        `;
-      });
-    }
-
-    // ✅ Garantir que o preço seja número
-    const precoOriginal = Number(produto.preco);
-    const precoFinal = calcularPreco(produto);
-    const temPromocao = produto.promocao && produto.promocao.ativo && precoFinal < precoOriginal;
-
-    produtosDiv.innerHTML += `
-      <div class="card">
-
-        <div class="imagens-container">
-          ${imagensHTML}
-        </div>
-
-        <h3>${produto.nome}</h3>
-
-        <p>${produto.categoria}</p>
-
-        <p>${(produto.descricao || "").replace(/\n/g, "<br>")}</p>
-
-        <div class="preco">
-          ${temPromocao
-            ? `
-              <p style="text-decoration:line-through; color:#888;">R$ ${precoOriginal.toFixed(2)}</p>
-              <p style="color:#22c55e; font-weight:bold;">R$ ${precoFinal.toFixed(2)}</p>
-              <span style="background:red;color:white;padding:4px 8px;border-radius:6px;font-size:12px;">
-                -${produto.promocao.desconto}%
-              </span>
-              <p class="contador-promocao" data-fim="${produto.promocao.dataFim}"></p>
-            `
-            : `<p>R$ ${precoOriginal.toFixed(2)}</p>`
-          }
-        </div>
-
-        <div style="display:flex; gap:10px; margin-top:15px;">
-          <button onclick="adicionarCarrinho(
-            '${produto.nome}', 
-            ${precoFinal}, 
-            '${produto.imagens && produto.imagens.length > 0 ? produto.imagens[0] : ""}',
-            this
-          )"
-          style="
-            flex:1;
-            padding:10px;
-            background:#3b82f6;
-            border:none;
-            border-radius:8px;
-            color:white;
-            font-weight:bold;
-            cursor:pointer;">
-            Adicionar
-          </button>
-
-          <a href="https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(
-            `Olá, quero comprar 1 unidade do produto: ${produto.nome} - R$ ${precoFinal}`
-          )}"
-            target="_blank"
-            style="
-              flex:1;
-              padding:10px;
-              background:#22c55e;
-              border-radius:8px;
-              color:white;
-              font-weight:bold;
-              text-align:center;
-              text-decoration:none;">
-              Comprar 1
-          </a>
-        </div>
-
-      </div>
-    `;
-  });
 }
+
 
 // 🔥 FUNÇÃO DE CONTADOR – FICA FORA DO RENDERIZAR
 function atualizarContadores() {
