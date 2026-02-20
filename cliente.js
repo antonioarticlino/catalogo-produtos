@@ -1,3 +1,19 @@
+let imagensAtuais = [];
+let indiceAtual = 0;
+let carrinho = [];
+let todosProdutos = [];
+
+function abrirImagem() {
+  const modal = document.getElementById("modalImagem");
+  const img = document.getElementById("imagemExpandida");
+
+  if (!imagensAtuais.length) return;
+
+  img.src = imagensAtuais[indiceAtual];
+  modal.style.display = "flex";
+}
+
+
 // Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import {
@@ -19,8 +35,6 @@ const db = getFirestore(app);
 
 const numeroWhatsApp = "+559284977208"; // 🔴 COLOQUE SEU NÚMERO AQUI
 
-let todosProdutos = [];
-
 //////////////////////////////////////////////////////
 // CARREGAR PRODUTOS
 //////////////////////////////////////////////////////
@@ -39,7 +53,6 @@ async function carregarProdutos() {
     todosProdutos.push(documento.data());
   });
 
-  preencherCategorias();
   renderizarProdutos(todosProdutos);
 }
 //////////////////////////////////////////////////////
@@ -58,11 +71,8 @@ function renderizarProdutos(lista) {
     catSection.classList.add("categoria-produtos");
     catSection.innerHTML = `<h2 style="margin-top:40px; color:#3b82f6;">${cat}</h2>`;
 
-    const catGrid = document.createElement("div");
-    catGrid.style.display = "grid";
-    catGrid.style.gridTemplateColumns = "repeat(auto-fill, minmax(280px, 1fr))";
-    catGrid.style.gap = "25px";
-
+const catGrid = document.createElement("div");
+catGrid.classList.add("grid-produtos");
     lista.filter(p => p.categoria === cat).forEach(produto => {
       let imagensHTML = "";
       if (produto.imagens && produto.imagens.length > 0) {
@@ -103,29 +113,39 @@ function renderizarProdutos(lista) {
              Comprar 1
            </a>`;
 
-      const card = document.createElement("div");
-      card.classList.add("card");
-      card.innerHTML = `
-        <div class="imagens-container">${imagensHTML}</div>
-        <h3>${produto.nome}</h3>
-        <p>${(produto.descricao || "").replace(/\n/g, "<br>")}</p>
-        <div class="preco">
-          ${temPromocao
-            ? `<p style="text-decoration:line-through; color:#888;">R$ ${precoOriginal.toFixed(2)}</p>
-               <p style="color:#22c55e; font-weight:bold;">R$ ${precoFinal.toFixed(2)}</p>
-               <span style="background:red;color:white;padding:4px 8px;border-radius:6px;font-size:12px;">
-                 -${produto.promocao.desconto}%
-               </span>
-               <p class="contador-promocao" data-fim="${produto.promocao.dataFim}"></p>`
-            : `<p>R$ ${precoOriginal.toFixed(2)}</p>`
-          }
-        </div>
-        <div style="display:flex; gap:10px; margin-top:15px;">
-          ${botaoAdicionar}
-          ${botaoWhatsApp}
-        </div>
-      `;
+  const card = document.createElement("div");
+card.classList.add("card");
 
+card.innerHTML = `
+  <div class="imagens-container">
+    ${imagensHTML}
+  </div>
+
+  <h3 class="titulo-produto">${produto.nome}</h3>
+
+<p class="descricao-produto">
+  ${(produto.descricao || "").replace(/\n/g, "<br>")}
+</p>
+
+  <div class="area-preco">
+    ${temPromocao
+      ? `
+        <span class="preco-antigo">R$ ${precoOriginal.toFixed(2)}</span>
+        <span class="preco-novo">R$ ${precoFinal.toFixed(2)}</span>
+        <span class="badge-desconto">
+          -${produto.promocao.desconto}%
+        </span>
+        <p class="contador-promocao" data-fim="${produto.promocao.dataFim}"></p>
+      `
+      : `<span class="preco-novo">R$ ${precoOriginal.toFixed(2)}</span>`
+    }
+  </div>
+
+  <div class="botoes-card">
+    ${botaoAdicionar}
+    ${botaoWhatsApp}
+  </div>
+`;
       catGrid.appendChild(card);
     });
 
@@ -180,98 +200,92 @@ function atualizarContadores() {
 // 🔥 Chama a cada 1 segundo
 setInterval(atualizarContadores, 1000);
 
-//////////////////////////////////////////////////////
-// PREENCHER CATEGORIAS AUTOMÁTICO
-//////////////////////////////////////////////////////
-function preencherCategorias() {
+document.addEventListener("DOMContentLoaded", () => {
 
-  const select = document.getElementById("filtroCategoria");
-  const categorias = [...new Set(todosProdutos.map(p => p.categoria))];
+  //////////////////////////////////////////////////////
+  // FILTRO POR TEXTO (BUSCA)
+  //////////////////////////////////////////////////////
 
-  select.innerHTML = `<option value="">Todas categorias</option>`;
+  const pesquisa = document.getElementById("pesquisa");
 
-  categorias.forEach(cat => {
-    select.innerHTML += `<option value="${cat}">${cat}</option>`;
-  });
-}
-
-//////////////////////////////////////////////////////
-// FILTROS
-//////////////////////////////////////////////////////
-document.getElementById("pesquisa").addEventListener("input", filtrar);
-document.getElementById("filtroCategoria").addEventListener("change", filtrar);
-
-function filtrar() {
-
-  const texto = document.getElementById("pesquisa").value.toLowerCase();
-  const categoria = document.getElementById("filtroCategoria").value;
-
-  const filtrados = todosProdutos.filter(produto => {
-
-    const nomeMatch = produto.nome.toLowerCase().includes(texto);
-    const categoriaMatch = categoria === "" || produto.categoria === categoria;
-
-    return nomeMatch && categoriaMatch;
-  });
-
-  renderizarProdutos(filtrados);
-}
-
-carregarProdutos();
-
-let imagensAtuais = [];
-let indiceAtual = 0;
-
-function abrirImagem() {
-  const modal = document.getElementById("modalImagem");
-  const img = document.getElementById("imagemExpandida");
-
-  img.src = imagensAtuais[indiceAtual];
-  modal.style.display = "flex";
-}
-
-document.getElementById("btnProximo").addEventListener("click", () => {
-  indiceAtual++;
-  if (indiceAtual >= imagensAtuais.length) {
-    indiceAtual = 0;
+  if (pesquisa) {
+    pesquisa.addEventListener("input", filtrarPorTexto);
   }
-  abrirImagem();
-});
 
-document.getElementById("btnAnterior").addEventListener("click", () => {
-  indiceAtual--;
-  if (indiceAtual < 0) {
-    indiceAtual = imagensAtuais.length - 1;
+  function filtrarPorTexto() {
+    const texto = pesquisa.value.toLowerCase();
+
+    const filtrados = todosProdutos.filter(produto =>
+      produto.nome.toLowerCase().includes(texto)
+    );
+
+    renderizarProdutos(filtrados);
   }
-  abrirImagem();
-});
 
-document.getElementById("fecharModal").addEventListener("click", () => {
-  document.getElementById("modalImagem").style.display = "none";
-});
+  carregarProdutos();
 
-document.getElementById("modalImagem").addEventListener("click", (e) => {
-  if (e.target.id === "modalImagem") {
-    document.getElementById("modalImagem").style.display = "none";
+  //////////////////////////////////////////////////////
+  // MODAL CONTROLES
+  //////////////////////////////////////////////////////
+
+  const btnProximo = document.getElementById("btnProximo");
+  const btnAnterior = document.getElementById("btnAnterior");
+  const fecharModal = document.getElementById("fecharModal");
+  const modalImagem = document.getElementById("modalImagem");
+
+  if (btnProximo) {
+    btnProximo.addEventListener("click", () => {
+      indiceAtual++;
+      if (indiceAtual >= imagensAtuais.length) {
+        indiceAtual = 0;
+      }
+      abrirImagem();
+    });
   }
+
+  if (btnAnterior) {
+    btnAnterior.addEventListener("click", () => {
+      indiceAtual--;
+      if (indiceAtual < 0) {
+        indiceAtual = imagensAtuais.length - 1;
+      }
+      abrirImagem();
+    });
+  }
+
+  if (fecharModal) {
+    fecharModal.addEventListener("click", () => {
+      modalImagem.style.display = "none";
+
+
+
+    });
+  }
+
+  if (modalImagem) {
+    modalImagem.addEventListener("click", (e) => {
+      if (e.target.id === "modalImagem") {
+        modalImagem.style.display = "none";
+      }
+    });
+  }
+
 });
-
-
-let carrinho = [];
-
 window.adicionarAoCarrinho = function(produto) {
   carrinho.push(produto);
   atualizarCarrinho();
 
-  // 🔥 Anima carrinho
+  // 🔥 Anima carrinho (somente se existir)
   const carrinhoIcon = document.querySelector(".carrinho");
-  carrinhoIcon.classList.add("animar");
 
-  setTimeout(() => {
-    carrinhoIcon.classList.remove("animar");
-  }, 400);
+  if (carrinhoIcon) {
+    carrinhoIcon.classList.add("animar");
+
+    setTimeout(() => {
+      carrinhoIcon.classList.remove("animar");
+    }, 400);
+  }
 };
-
 
 window.abrirCarrinho = function() {
   document.getElementById("modalCarrinho").style.display = "flex";
@@ -427,6 +441,17 @@ window.filtrarPromocoes = function() {
 window.voltarInicio = function() {
   renderizarProdutos(todosProdutos); // mostra todos os produtos
 };
+window.filtrarCategoria = function(categoria) {
 
+  if (categoria === "Todas") {
+    renderizarProdutos(todosProdutos);
+  } else {
+    const filtrados = todosProdutos.filter(produto =>
+      produto.categoria === categoria
+    );
 
+    renderizarProdutos(filtrados);
+  }
 
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
