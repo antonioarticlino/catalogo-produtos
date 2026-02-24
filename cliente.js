@@ -1,457 +1,756 @@
-let imagensAtuais = [];
-let indiceAtual = 0;
-let carrinho = [];
-let todosProdutos = [];
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catálogo</title>
 
-function abrirImagem() {
-  const modal = document.getElementById("modalImagem");
-  const img = document.getElementById("imagemExpandida");
+<style>
+  /* ===== MENU LATERAL ===== */
 
-  if (!imagensAtuais.length) return;
+.menu-lateral {
+  position: fixed;
+  top: 0;
+  left: 0;
+  transform: translateX(-100%);
+  width: 220px;
+  height: 100vh;
+  background: #0f172a;
+  box-shadow: 5px 0 20px rgba(0,0,0,0.5);
 
-  img.src = imagensAtuais[indiceAtual];
-  modal.style.display = "flex";
+  padding: 20px 20px 20px 60px; 
+  padding-top: 70px;
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+
+  z-index: 1001;
+  box-sizing: border-box;
 }
 
 
-// Firebase
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  query,
-  orderBy
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDtmu5yKt5Kz8yxzTCCf5MfC2av1O5zL2Q",
-  authDomain: "lojavendas-ae418.firebaseapp.com",
-  projectId: "lojavendas-ae418",
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-const numeroWhatsApp = "+559284977208"; // 🔴 COLOQUE SEU NÚMERO AQUI
-
-//////////////////////////////////////////////////////
-// CARREGAR PRODUTOS
-//////////////////////////////////////////////////////
-async function carregarProdutos() {
-
-  const q = query(
-    collection(db, "produtos"),
-    orderBy("criadoEm", "asc")
-  );
-
-  const querySnapshot = await getDocs(q);
-
-  todosProdutos = [];
-
-  querySnapshot.forEach((documento) => {
-    todosProdutos.push(documento.data());
-  });
-
-  renderizarProdutos(todosProdutos);
+.menu-lateral.ativo {
+  transform: translateX(0);
 }
-//////////////////////////////////////////////////////
-// RENDERIZAR PRODUTOS POR CATEGORIA
-//////////////////////////////////////////////////////
-function renderizarProdutos(lista) {
 
-  const produtosDiv = document.getElementById("produtos");
-  produtosDiv.innerHTML = "";
 
-  // Agrupar produtos por categoria
-  const categorias = [...new Set(lista.map(p => p.categoria))];
+.menu-lateral a {
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+  padding: 10px;
+  border-radius: 6px;
+  transition: 0.3s;
+}
 
-  categorias.forEach(cat => {
-    const catSection = document.createElement("div");
-    catSection.classList.add("categoria-produtos");
-    catSection.innerHTML = `<h2 style="margin-top:40px; color:#3b82f6;">${cat}</h2>`;
+.menu-lateral a:hover {
+  background: #1e293b;
+}
 
-const catGrid = document.createElement("div");
-catGrid.classList.add("grid-produtos");
-    lista.filter(p => p.categoria === cat).forEach(produto => {
-      let imagensHTML = "";
-      if (produto.imagens && produto.imagens.length > 0) {
-        produto.imagens.forEach((img, index) => {
-          imagensHTML += `
-            <img 
-              src="${img}" 
-              alt="${produto.nome}"
-              class="imagem-produto"
-              data-index="${index}"
-              data-imagens='${JSON.stringify(produto.imagens)}'>
-          `;
-        });
-      }
+.menu-lateral.ativo {
+  left: 0;
+}
 
-      const precoOriginal = Number(produto.preco);
-      const precoFinal = calcularPreco(produto);
-      const temPromocao = produto.promocao && produto.promocao.ativo && precoFinal < precoOriginal;
+.menu-icon {
+  position: absolute;
+  left: 0;
+}
 
-      // Botão Adicionar
-      const botaoAdicionar = produto.vendido
-        ? `<button disabled style="flex:1;padding:10px;background:#888;border:none;border-radius:8px;color:white;font-weight:bold;cursor:not-allowed;">
-             VENDIDO
-           </button>`
-        : `<button onclick="adicionarCarrinho('${produto.nome}', ${precoFinal}, '${produto.imagens && produto.imagens.length > 0 ? produto.imagens[0] : ""}', this)"
-             style="flex:1;padding:10px;background:#3b82f6;border:none;border-radius:8px;color:white;font-weight:bold;cursor:pointer;">
-             Adicionar
-           </button>`;
 
-      // Botão WhatsApp
-      const botaoWhatsApp = produto.vendido
-        ? `<button disabled style="flex:1;padding:10px;background:#888;border:none;border-radius:8px;color:white;font-weight:bold;cursor:not-allowed;">
-             Produto vendido
-           </button>`
-        : `<a href="https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(`Olá, quero comprar 1 unidade do produto: ${produto.nome} - R$ ${precoFinal}`)}"
-             target="_blank"
-             style="flex:1;padding:10px;background:#22c55e;border-radius:8px;color:white;font-weight:bold;text-align:center;text-decoration:none;">
-             Comprar 1
-           </a>`;
+/* Overlay */
 
-  const card = document.createElement("div");
-card.classList.add("card");
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  opacity: 0;
+  visibility: hidden;
+  transition: 0.3s;
+  z-index: 1000;
+}
 
-card.innerHTML = `
-  <div class="imagens-container">
-    ${imagensHTML}
+.overlay.ativo {
+  opacity: 1;
+  visibility: visible;
+}
+
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #0f172a;
+  color: white;
+}
+
+/* ===== HEADER MODERNO ===== */
+
+.topo {
+  background: #1e293b;
+  padding: 15px 25px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.topo-linha {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* MENU ESQUERDA */
+.menu-icon {
+  position: absolute;
+  left: 0;
+  width: 30px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1100;
+}
+
+.carrinho {
+  position: absolute;
+  right: 0;
+  font-size: 20px;
+  cursor: pointer;
+
+  width: 40px;
+  height: 40px;
+  background: #0f172a; /* cor do círculo */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: 0 0 10px rgba(0,0,0,0.4);
+  transition: 0.3s;
+}
+
+.carrinho:hover {
+  background: #1e293b;
+  transform: scale(1.05);
+}
+
+
+
+.menu-icon span {
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background: white;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* posição inicial */
+.menu-icon span:nth-child(1) {
+  transform: translateY(-8px);
+}
+
+.menu-icon span:nth-child(2) {
+  transform: translateY(0);
+}
+
+.menu-icon span:nth-child(3) {
+  transform: translateY(8px);
+}
+
+/* ===== quando ativo ===== */
+
+.menu-icon.ativo span:nth-child(1) {
+  transform: rotate(45deg);
+}
+
+.menu-icon.ativo span:nth-child(2) {
+  opacity: 0;
+}
+
+.menu-icon.ativo span:nth-child(3) {
+  transform: rotate(-45deg);
+}
+
+
+
+.logo img {
+  height: 145px;
+  width: auto;
+  object-fit: contain;
+}
+
+
+.carrinho {
+  position: relative;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+/* ===== Animação carrinho ===== */
+
+.carrinho {
+  position: fixed;
+  top: 20px;
+  right: 25px;
+  font-size: 22px;
+  cursor: pointer;
+  z-index: 1200;
+}
+
+.badge {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  background: red;
+  color: white;
+  border-radius: 50%;
+  padding: 3px 7px;
+  font-size: 12px;
+}
+
+.topo-pesquisa {
+  margin-top: 15px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.topo-pesquisa input,
+.topo-pesquisa select {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: white;
+}
+
+.topo-pesquisa input {
+  flex: 1;
+}
+
+.topo-pesquisa input:focus,
+.topo-pesquisa select:focus {
+  outline: none;
+  border: 1px solid #3b82f6;
+}
+
+@media (max-width: 600px) {
+  .topo-pesquisa {
+    flex-direction: column;
+  }
+}
+
+/* ===== GRID PRODUTOS ===== */
+
+#produtos {
+  padding: 30px;
+}
+
+/* ===== CARD ===== */
+
+/* ===== CARD ESTILO KABUM ===== */
+
+.card {
+  background: #1e293b;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+  transition: 0.3s;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 25px rgba(255,101,0,0.4);
+}
+
+.card img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  background: #0f172a;
+}
+
+.card h3 {
+  font-size: 16px;
+  margin: 12px;
+  color: #e2e8f0;
+  min-height: 45px;
+}
+
+.card p {
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 0 12px 10px 12px;
+}
+
+.preco {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ff6500;
+  margin: 10px 12px;
+}
+
+.btn-whatsapp {
+  margin: 12px;
+  padding: 14px;
+  background: #ff6500;
+  text-align: center;
+  border-radius: 10px;
+  text-decoration: none;
+  color: white;
+  font-weight: bold;
+  font-size: 15px;
+  transition: 0.3s;
+}
+
+.btn-whatsapp:hover {
+  background: #ff7a1a;
+  transform: scale(1.03);
+}
+/* ===== GALERIA ===== */
+
+.imagens-container {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.imagens-container img {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.imagens-container img:hover {
+  transform: scale(1.05);
+}
+
+.carrinho {
+  position: fixed;
+  top: 20px;
+  right: 25px;
+  z-index: 1200;
+}
+/* ===== ITEM CARRINHO ===== */
+
+.item-carrinho {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  background: #0f172a;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.img-carrinho {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.info-carrinho {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+}
+
+.remover {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* ===== ANIMAÇÃO CARRINHO ===== */
+
+@keyframes pulseCarrinho {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+.carrinho.animar {
+  animation: pulseCarrinho 0.4s ease;
+}
+/* ===== CATEGORIAS KABUM ===== */
+
+.categorias-scroll {
+  display: flex;
+  gap: 25px;
+  overflow-x: auto;
+  padding: 20px;
+  background: #111827;
+  scroll-behavior: smooth;
+}
+
+.categorias-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.categoria-item {
+  min-width: 90px;
+  text-align: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.icone-categoria {
+  width: 70px;
+  height: 70px;
+  background: #0b3c6f;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  margin: 0 auto 8px;
+  transition: 0.3s;
+}
+
+.categoria-item p {
+  font-size: 14px;
+  color: white;
+}
+
+.categoria-item:hover .icone-categoria {
+  background: #ff6500;
+  transform: scale(1.1);
+
+}
+.titulo-produto {
+  font-size: 16px;
+  margin: 12px;
+  min-height: 45px;
+}
+
+.descricao-produto {
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 0 12px 10px;
+  line-height: 1.5;
+  white-space: normal;
+}
+
+.area-preco {
+  margin: 10px 12px;
+}
+
+.preco-antigo {
+  text-decoration: line-through;
+  color: #888;
+  display: block;
+  font-size: 14px;
+}
+
+.preco-novo {
+  font-size: 22px;
+  font-weight: bold;
+  color: #ff6500;
+  display: block;
+}
+
+.badge-desconto {
+  background: red;
+  color: white;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  margin-top: 5px;
+}
+
+.botoes-card {
+  display: flex;
+  gap: 10px;
+  margin: 15px;
+}
+.grid-produtos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- ===== HEADER ===== -->
+
+<header class="topo">
+
+  <div class="topo-linha">
+<div class="menu-icon" onclick="toggleMenu()">
+  <span></span>
+  <span></span>
+  <span></span>
+</div>
+
+
+
+    <div class="logo">
+      <img src="ChatGPT Image 16 de fev. de 2026, 21_29_13.png" alt="Minha Loja">
+    </div>
+
+    <div class="carrinho" onclick="abrirCarrinho()">
+      🛒
+      <span id="contadorCarrinho" class="badge">0</span>
+    </div>
   </div>
 
-  <h3 class="titulo-produto">${produto.nome}</h3>
+<div class="topo-pesquisa">
+  <input type="text" id="pesquisa" placeholder="Buscar produtos...">
+</div>
+</header>
 
-<p class="descricao-produto">
-  ${(produto.descricao || "").replace(/\n/g, "<br>")}
-</p>
+<!-- ===== CATEGORIAS ESTILO KABUM ===== -->
+<div class="categorias-scroll">
 
-  <div class="area-preco">
-    ${temPromocao
-      ? `
-        <span class="preco-antigo">R$ ${precoOriginal.toFixed(2)}</span>
-        <span class="preco-novo">R$ ${precoFinal.toFixed(2)}</span>
-        <span class="badge-desconto">
-          -${produto.promocao.desconto}%
-        </span>
-        <p class="contador-promocao" data-fim="${produto.promocao.dataFim}"></p>
-      `
-      : `<span class="preco-novo">R$ ${precoOriginal.toFixed(2)}</span>`
+<div class="categoria-item" onclick="filtrarCategoria('Todas')">
+  <div class="icone-categoria">📦</div>
+  <p>Todas</p>
+</div>
+
+<div class="categoria-item" onclick="filtrarCategoria('Controle')">
+  <div class="icone-categoria">🎮</div>
+  <p>Controle</p>
+</div>
+
+  <div class="categoria-item" onclick="filtrarCategoria('Resfriadores')">
+    <div class="icone-categoria">❄️</div>
+    <p>Resfriadores</p>
+  </div>
+
+  <div class="categoria-item" onclick="filtrarCategoria('Teclado')">
+    <div class="icone-categoria">⌨️</div>
+    <p>Teclado</p>
+  </div>
+
+  <div class="categoria-item" onclick="filtrarCategoria('Gabinete')">
+    <div class="icone-categoria">🖥️</div>
+    <p>Gabinete</p>
+  </div>
+
+  <div class="categoria-item" onclick="filtrarCategoria('Fonte')">
+    <div class="icone-categoria">🔌</div>
+    <p>Fonte</p>
+  </div>
+
+  <div class="categoria-item" onclick="filtrarCategoria('Processador')">
+    <div class="icone-categoria">⚙️</div>
+    <p>Processador</p>
+  </div>
+
+  <div class="categoria-item" onclick="filtrarCategoria('Armazenamento')">
+    <div class="icone-categoria">💾</div>
+    <p>Armazenamento</p>
+  </div>
+
+  <div class="categoria-item" onclick="filtrarCategoria('Headset')">
+    <div class="icone-categoria">🎧</div>
+    <p>Headset</p>
+  </div>
+
+  <div class="categoria-item" onclick="filtrarCategoria('Placa de Vídeo')">
+    <div class="icone-categoria"></div>
+    <p>Placa de Vídeo</p>
+  </div>
+
+  <div class="categoria-item" onclick="filtrarCategoria('Monitor')">
+    <div class="icone-categoria">🖥️</div>
+    <p>Monitor</p>
+  </div>
+
+  <div class="categoria-item" onclick="filtrarCategoria('Memória RAM')">
+    <div class="icone-categoria">📀</div>
+    <p>Memória RAM</p>
+  </div>
+
+  <div class="categoria-item" onclick="filtrarCategoria('Placa-mãe')">
+    <div class="icone-categoria">🔲</div>
+    <p>Placa-mãe</p>
+  </div>
+
+  <div class="categoria-item" onclick="filtrarCategoria('Mouse')">
+    <div class="icone-categoria">🖱️</div>
+    <p>Mouse</p>
+  </div>
+
+  <div class="categoria-item" onclick="filtrarCategoria('Kit')">
+    <div class="icone-categoria">📦</div>
+    <p>Kit</p>
+  </div>
+
+  <div class="categoria-item" onclick="filtrarCategoria('Outros')">
+    <div class="icone-categoria">📂</div>
+    <p>Outros</p>
+  </div>
+
+</div>
+
+</div>
+
+<!-- ===== MENU LATERAL ===== -->
+
+
+<!-- ===== MENU LATERAL ===== -->
+
+<div id="menuLateral" class="menu-lateral">
+  <a href="#" onclick="voltarInicio(); fecharMenu()">Início</a>
+
+<a href="#" onclick="filtrarPromocoes(); fecharMenu()">Promoções</a>
+  <a href="#">Contato</a>
+
+</div>
+
+
+<div id="overlay" class="overlay" onclick="fecharMenu()"></div>
+
+
+<!-- ===== PRODUTOS ===== -->
+
+<div id="produtos"></div>
+
+<!-- ===== MODAL IMAGEM ===== -->
+
+<div id="modalImagem" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.9);
+  justify-content:center;
+  align-items:center;
+  z-index:999;
+">
+
+  <span id="fecharModal" style="
+    position:absolute;
+    top:20px;
+    right:30px;
+    font-size:30px;
+    cursor:pointer;
+  ">✕</span>
+
+  <span id="btnAnterior" style="
+    position:absolute;
+    left:30px;
+    font-size:40px;
+    cursor:pointer;
+  ">❮</span>
+
+  <img id="imagemExpandida" style="
+    max-width:80%;
+    max-height:80%;
+    border-radius:12px;
+  ">
+
+  <span id="btnProximo" style="
+    position:absolute;
+    right:30px;
+    font-size:40px;
+    cursor:pointer;
+  ">❯</span>
+
+</div>
+
+<!-- ===== MODAL CARRINHO ===== -->
+
+<div id="modalCarrinho" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.7);
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+">
+
+  <div style="
+    background:#1e293b;
+    width:400px;
+    max-height:80%;
+    overflow:auto;
+    padding:20px;
+    border-radius:12px;
+    position:relative;
+  ">
+
+    <button onclick="fecharCarrinho()" style="
+      position:absolute;
+      top:10px;
+      right:10px;
+      background:transparent;
+      border:none;
+      color:white;
+      font-size:20px;
+      cursor:pointer;
+    ">✖</button>
+
+    <h3>Seu Carrinho</h3>
+    <div id="itensCarrinho"></div>
+    <h4 id="totalCarrinho"></h4>
+
+    <button onclick="finalizarCompra()" style="
+      width:100%;
+      padding:12px;
+      background:#22c55e;
+      border:none;
+      border-radius:8px;
+      color:white;
+      font-weight:bold;
+      cursor:pointer;">
+      Finalizar pelo WhatsApp
+    </button>
+
+  </div>
+</div>
+
+<script type="module" src="cliente.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const menu = document.getElementById("menuLateral");
+  const overlay = document.getElementById("overlay");
+  const menuIcon = document.querySelector(".menu-icon");
+
+  window.toggleMenu = function () {
+    menu.classList.toggle("ativo");
+    overlay.classList.toggle("ativo");
+    menuIcon.classList.toggle("ativo");
+
+    if (menu.classList.contains("ativo")) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
     }
-  </div>
+  };
 
-  <div class="botoes-card">
-    ${botaoAdicionar}
-    ${botaoWhatsApp}
-  </div>
-`;
-      catGrid.appendChild(card);
-    });
+  window.fecharMenu = function () {
+    menu.classList.remove("ativo");
+    overlay.classList.remove("ativo");
+    menuIcon.classList.remove("ativo");
+    document.body.style.overflow = "auto";
+  };
 
-    catSection.appendChild(catGrid);
-    produtosDiv.appendChild(catSection);
-  });
-
-  // Reaplicar evento de clique nas imagens
-  setTimeout(() => {
-    document.querySelectorAll(".imagem-produto").forEach(imagem => {
-      imagem.addEventListener("click", () => {
-        imagensAtuais = JSON.parse(imagem.dataset.imagens);
-        indiceAtual = parseInt(imagem.dataset.index);
-        abrirImagem();
-      });
-    });
-  }, 100);
-}
-
-
-
-
-// 🔥 FUNÇÃO DE CONTADOR – FICA FORA DO RENDERIZAR
-function atualizarContadores() {
-  const contadores = document.querySelectorAll(".contador-promocao");
-
-  contadores.forEach(c => {
-    const fim = new Date(c.dataset.fim);
-    const agora = new Date();
-    let diff = fim - agora;
-
-    if (diff <= 0) {
-      c.innerText = "Oferta encerrada";
-      return;
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      window.fecharMenu();
     }
-
-    const dias = Math.floor(diff / (1000 * 60 * 60 * 24));
-    diff -= dias * (1000 * 60 * 60 * 24);
-
-    const horas = Math.floor(diff / (1000 * 60 * 60));
-    diff -= horas * (1000 * 60 * 60);
-
-    const minutos = Math.floor(diff / (1000 * 60));
-    diff -= minutos * (1000 * 60);
-
-    const segundos = Math.floor(diff / 1000);
-
-    c.innerText = `Oferta termina em ${dias}d ${horas}h ${minutos}m ${segundos}s`;
   });
-}
-
-// 🔥 Chama a cada 1 segundo
-setInterval(atualizarContadores, 1000);
-
-document.addEventListener("DOMContentLoaded", () => {
-
-  //////////////////////////////////////////////////////
-  // FILTRO POR TEXTO (BUSCA)
-  //////////////////////////////////////////////////////
-
-  const pesquisa = document.getElementById("pesquisa");
-
-  if (pesquisa) {
-    pesquisa.addEventListener("input", filtrarPorTexto);
-  }
-
-  function filtrarPorTexto() {
-    const texto = pesquisa.value.toLowerCase();
-
-    const filtrados = todosProdutos.filter(produto =>
-      produto.nome.toLowerCase().includes(texto)
-    );
-
-    renderizarProdutos(filtrados);
-  }
-
-  carregarProdutos();
-
-  //////////////////////////////////////////////////////
-  // MODAL CONTROLES
-  //////////////////////////////////////////////////////
-
-  const btnProximo = document.getElementById("btnProximo");
-  const btnAnterior = document.getElementById("btnAnterior");
-  const fecharModal = document.getElementById("fecharModal");
-  const modalImagem = document.getElementById("modalImagem");
-
-  if (btnProximo) {
-    btnProximo.addEventListener("click", () => {
-      indiceAtual++;
-      if (indiceAtual >= imagensAtuais.length) {
-        indiceAtual = 0;
-      }
-      abrirImagem();
-    });
-  }
-
-  if (btnAnterior) {
-    btnAnterior.addEventListener("click", () => {
-      indiceAtual--;
-      if (indiceAtual < 0) {
-        indiceAtual = imagensAtuais.length - 1;
-      }
-      abrirImagem();
-    });
-  }
-
-  if (fecharModal) {
-    fecharModal.addEventListener("click", () => {
-      modalImagem.style.display = "none";
-
-
-
-    });
-  }
-
-  if (modalImagem) {
-    modalImagem.addEventListener("click", (e) => {
-      if (e.target.id === "modalImagem") {
-        modalImagem.style.display = "none";
-      }
-    });
-  }
 
 });
-window.adicionarAoCarrinho = function(produto) {
-  carrinho.push(produto);
-  atualizarCarrinho();
+</script>
 
-  // 🔥 Anima carrinho (somente se existir)
-  const carrinhoIcon = document.querySelector(".carrinho");
-
-  if (carrinhoIcon) {
-    carrinhoIcon.classList.add("animar");
-
-    setTimeout(() => {
-      carrinhoIcon.classList.remove("animar");
-    }, 400);
-  }
-};
-
-window.abrirCarrinho = function() {
-  document.getElementById("modalCarrinho").style.display = "flex";
-};
-
-function atualizarCarrinho() {
-  const lista = document.getElementById("itensCarrinho");
-  const contador = document.getElementById("contadorCarrinho");
-
-  lista.innerHTML = "";
-  let total = 0;
-
-  carrinho.forEach((item, index) => {
-
-    const div = document.createElement("div");
-    div.classList.add("item-carrinho");
-
-    div.innerHTML = `
-      <img src="${item.imagem}" class="img-carrinho">
-      
-      <div class="info-carrinho">
-        <span>${item.nome}</span>
-     <span>R$ ${Number(item.preco).toFixed(2)}</span>
-      </div>
-
-      <button class="remover" onclick="removerItem(${index})">✕</button>
-    `;
-
-    lista.appendChild(div);
-    total += Number(item.preco);
-
-  });
-
-  document.getElementById("totalCarrinho").innerText =
-    "Total: R$ " + total.toFixed(2);
-
-  contador.innerText = carrinho.length;
-  
-document.getElementById("totalCarrinho").innerText = "Total: R$ " + total.toFixed(2);
-contador.innerText = carrinho.length;
-}
-
-
-
-window.removerItem = function(index) {
-  carrinho.splice(index, 1);
-  atualizarCarrinho();
-};
-
-window.finalizarCompra = function() {
-  let mensagem = "Olá, quero finalizar a compra:%0A";
-  let total = 0;
-
-  carrinho.forEach(item => {
-    mensagem += `- ${item.nome} (R$ ${item.preco})%0A`;
-    total += item.preco;
-  });
-
-  mensagem += `%0ATotal: R$ ${total.toFixed(2)}`;
-
-  window.open(`https://wa.me/${numeroWhatsApp}?text=${mensagem}`, "_blank");
-};
-
-window.fecharCarrinho = function() {
-  document.getElementById("modalCarrinho").style.display = "none";
-};
-
-window.adicionarCarrinho = function(nome, preco, imagem, botao) {
-
-  carrinho.push({
-    nome,
-    preco,
-    imagem
-  });
-
-  atualizarCarrinho();
-
-  animarProdutoAteCarrinho(botao);
-};
-
-function animarProdutoAteCarrinho(botao) {
-
-  const card = botao.closest(".card");
-  const img = card.querySelector(".imagem-produto");
-  const carrinhoIcon = document.querySelector(".carrinho");
-
-  if (!img) return;
-
-  const clone = img.cloneNode(true);
-
-  const rect = img.getBoundingClientRect();
-  const carrinhoRect = carrinhoIcon.getBoundingClientRect();
-
-  clone.style.position = "fixed";
-  clone.style.left = rect.left + "px";
-  clone.style.top = rect.top + "px";
-  clone.style.width = rect.width + "px";
-  clone.style.height = rect.height + "px";
-  clone.style.transition = "all 0.8s cubic-bezier(.65,-0.3,.32,1.4)";
-  clone.style.zIndex = "9999";
-  clone.style.borderRadius = "10px";
-
-  document.body.appendChild(clone);
-
-  setTimeout(() => {
-    clone.style.left = carrinhoRect.left + "px";
-    clone.style.top = carrinhoRect.top + "px";
-    clone.style.width = "20px";
-    clone.style.height = "20px";
-    clone.style.opacity = "0";
-  }, 10);
-
-  setTimeout(() => {
-    clone.remove();
-    carrinhoIcon.classList.add("animar");
-
-    setTimeout(() => {
-      carrinhoIcon.classList.remove("animar");
-    }, 400);
-
-  }, 800);
-}
-
-function calcularPreco(produto) {
-
-  const preco = Number(produto.preco); // garante que seja número
-
-  if (!produto.promocao || !produto.promocao.ativo) return preco;
-
-  const agora = new Date();
-
-  if (!produto.promocao.dataInicio || !produto.promocao.dataFim) return preco;
-
-  const inicio = new Date(produto.promocao.dataInicio);
-  const fim = new Date(produto.promocao.dataFim);
-
-  if (agora >= inicio && agora <= fim) {
-    return preco - (preco * produto.promocao.desconto / 100);
-  }
-
-  return preco;
-}
-window.filtrarPromocoes = function() {
-  const promocaoProdutos = todosProdutos.filter(produto => {
-    const precoOriginal = Number(produto.preco);
-    const precoFinal = calcularPreco(produto);
-    return produto.promocao && produto.promocao.ativo && precoFinal < precoOriginal;
-  });
-
-  renderizarProdutos(promocaoProdutos);
-};
-// FUNÇÃO PARA VOLTAR AO INÍCIO
-window.voltarInicio = function() {
-  renderizarProdutos(todosProdutos); // mostra todos os produtos
-};
-window.filtrarCategoria = function(categoria) {
-
-  if (categoria === "Todas") {
-    renderizarProdutos(todosProdutos);
-  } else {
-    const filtrados = todosProdutos.filter(produto =>
-      produto.categoria === categoria
-    );
-
-    renderizarProdutos(filtrados);
-  }
-
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
+</body>
+</html>
